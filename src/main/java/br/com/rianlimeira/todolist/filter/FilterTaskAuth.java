@@ -32,10 +32,8 @@ public class FilterTaskAuth extends OncePerRequestFilter {
             // Auth
             // Pegar username e password
             var authorization = request.getHeader("Authorization");
-            // System.out.println(authorization);
 
             var authEncoded = authorization.substring("Basic".length()).trim();
-            System.out.println(authEncoded);
 
             byte[] authDecode = Base64.getDecoder().decode(authEncoded);
 
@@ -44,8 +42,6 @@ public class FilterTaskAuth extends OncePerRequestFilter {
             String[] credentials = authSting.split(":");
             String username = credentials[0];
             String password = credentials[1];
-            System.out.println(username);
-            System.out.println(password);
 
             // Valida user and password
             var user = this.userRepository.findByUsername(username);
@@ -55,14 +51,16 @@ public class FilterTaskAuth extends OncePerRequestFilter {
                 // Validar senha
                 var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
                 if (passwordVerify.verified) {
+                    // Request = recebe/vem da requisão
+                    // Response = envia para o usuario
+                    request.setAttribute("idUser", user.getId());
                     filterChain.doFilter(request, response);
                 } else {
                     response.sendError(401);
                 }
             }
-        }else{
+        } else {
             filterChain.doFilter(request, response);
         }
     }
 }
-
