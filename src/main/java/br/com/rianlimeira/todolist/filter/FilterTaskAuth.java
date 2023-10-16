@@ -1,24 +1,60 @@
 package br.com.rianlimeira.todolist.filter;
 
 import java.io.IOException;
+import java.util.Base64;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-import jakarta.servlet.Filter;
+import at.favre.lib.crypto.bcrypt.BCrypt;
+import br.com.rianlimeira.todolist.user.IUserRepository;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class FilterTaskAuth implements Filter {
+public class FilterTaskAuth extends OncePerRequestFilter {
+
+    private IUserRepository userRepository;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        // Executar alguma ação
-        System.out.println("Chegou no filtro");
-        chain.doFilter(request, response);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+        // Auth
+        // Pegar username e password
+        var authorization = request.getHeader("Authorization");
+        // System.out.println(authorization);
+
+        var authEncoded = authorization.substring("Basic".length()).trim();
+        System.out.println(authEncoded);
+
+        byte[] authDecode = Base64.getDecoder().decode(authEncoded);
+
+        var authSting = new String(authDecode);
+
+        String[] credentials = authSting.split(":");
+        String username = credentials[0];
+        String password = credentials[1];
+        System.out.println(username);
+        System.out.println(password);
+
+        // Valida user and password
+        var user = this.userRepository.findByUsername(username);
+        if (user == null) {
+            response.sendError(401);
+        } else {
+            // Validar senha
+            var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+            if (passwordVerify.verified) {
+                filterChain.doFilter(request, response);
+            }else{
+                response.sendError(401);
+            }
+        }
 
     }
 
