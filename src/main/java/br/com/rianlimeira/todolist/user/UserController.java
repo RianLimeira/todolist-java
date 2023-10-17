@@ -38,6 +38,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario já existe");
         }
         var userCreated = this.userRepository.save(userModel);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userCreated);
+        return ResponseEntity.status(HttpStatus.OK).body(userCreated);
     }
 }
